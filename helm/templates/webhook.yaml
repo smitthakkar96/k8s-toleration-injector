@@ -1,0 +1,104 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tolerations-injector
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: tolerations-injector
+spec:
+  publishNotReadyAddresses: true
+  ports:
+    - port: 443
+      targetPort: 8443
+  selector:
+    app: tolerations-injector
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tolerations-injector
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: tolerations-injector
+spec:
+  replicas: {{ .desiredReplicas }}
+  selector:
+    matchLabels:
+      app: tolerations-injector
+  template:
+    metadata:
+      name: tolerations-injector
+      namespace: {{ .Release.Namespace }}
+      labels:
+        app: tolerations-injector
+    spec:
+      serviceAccountName: {{ .Release.Name }}-sa
+      {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      {{- end }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+      {{- end }}
+      volumes:
+      - name: tls-certs-tolerations-injector
+        secret:
+          secretName: tls-certs-tolerations-injector
+          items:
+          - key: tolerations-injector.pem
+            path: tolerations-injector.pem
+          - key: tolerations-injector.key
+            path: tolerations-injector.key
+      containers:
+        - name: mutator
+          image: 857520607940.dkr.ecr.eu-west-1.amazonaws.com/k8s-tolerations-injector-webhook:latest
+          imagePullPolicy: Always
+          volumeMounts:
+          - name: tls-certs-tolerations-injector
+            mountPath: "/app/ssl"
+            readOnly: true
+          env:
+          - name: JWT_TOKEN_PATH
+            value: /var/run/secrets/kubernetes.io/serviceaccount/token
+          - name: VAULT_ADDR
+            value: {{ .Values.vault.address }}
+          - name: VAULT_AUTH_DELEGATOR_ROLE_NAME
+            value: {{ .Values.vault.authDelegatorRoleName }}
+          - name: VAULT_POD_ROLE_NAME
+            value: {{ .Values.vault.podRoleName }}
+          resources:
+            limits:
+              cpu: 500m
+              memory: 128Mi
+            requests:
+              cpu: 250m
+              memory: 64Mi
+
+---
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: tolerations-injector
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: tolerations-injector
+webhooks:
+  - name: tolerations-injector.{{ .Release.Namespace }}.svc.cluster.local
+    failurePolicy: Fail
+    clientConfig:
+      caBundle: {{ .Values.caBundle }}
+      service:
+        name: tolerations-injector
+        namespace: {{ .Release.Namespace }}
+        path: "/mutate"
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["pods", "serviceaccounts"]
+    namespaceSelector:
+      matchLabels:
+        tolerations-injector: enabled

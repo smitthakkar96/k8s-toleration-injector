@@ -1,0 +1,4 @@
+apiVersion: v1
+name: vault-tolerations-injector
+version: 0.10.4
+description: Install and configure vault tolerations-injector
