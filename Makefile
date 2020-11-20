@@ -1,6 +1,6 @@
 NAME = tolerations-injector
-IMAGE_PREFIX = 857520607940.dkr.ecr.eu-west-1.amazonaws.com
-IMAGE_NAME = k8s-tolerations-injector-webhook
+IMAGE_PREFIX = smitthakkar96
+IMAGE_NAME = k8s-tolerations-injector
 IMAGE_VERSION = $$(git log --abbrev-commit --format=%h -s | head -n 1)
 
 export GO111MODULE=on
