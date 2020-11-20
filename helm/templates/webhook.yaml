@@ -54,21 +54,12 @@ spec:
             path: tolerations-injector.key
       containers:
         - name: mutator
-          image: 857520607940.dkr.ecr.eu-west-1.amazonaws.com/k8s-tolerations-injector-webhook:latest
+          image: smitthakkar96/tolerations-injector:latest
           imagePullPolicy: Always
           volumeMounts:
           - name: tls-certs-tolerations-injector
             mountPath: "/app/ssl"
             readOnly: true
-          env:
-          - name: JWT_TOKEN_PATH
-            value: /var/run/secrets/kubernetes.io/serviceaccount/token
-          - name: VAULT_ADDR
-            value: {{ .Values.vault.address }}
-          - name: VAULT_AUTH_DELEGATOR_ROLE_NAME
-            value: {{ .Values.vault.authDelegatorRoleName }}
-          - name: VAULT_POD_ROLE_NAME
-            value: {{ .Values.vault.podRoleName }}
           resources:
             limits:
               cpu: 500m

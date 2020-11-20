@@ -1,15 +1,3 @@
 desiredReplicas: 2
-serviceAccountName: vault-auth
 caBundle: "Ca=="
-name: vault-tolerations-injector
-vault:
-  address: http://internal-dev-vault-887548903.eu-west-1.elb.amazonaws.com:8200
-  authDelegatorRoleName: eks-vault-auth-delegator
-  podRoleName: eks-dev-space
-tolerations:
-- key: "dubizzle.com/group"
-  operator: "Equal"
-  value: "ops"
-  effect: "NoExecute"
-nodeSelector:
-  dubizzle.com/group: "ops"
+name: k8s-toleration-injector
